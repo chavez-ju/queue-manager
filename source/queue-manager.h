@@ -261,6 +261,7 @@ class QueueManager {
    private:
     std::queue<RunInfo> runs;
     emp::web::Div my_div_;
+    std::string table_id;
 
    public:
     /// Default constructor
@@ -306,6 +307,7 @@ class QueueManager {
 
     /// Initializes table to web
     void DivAddTable(size_t row, size_t col, std::string id) {
+        table_id = id;
         emp::web::Table result_tab(row, col, id);
         result_tab.SetCSS("border-collapse", "collapse");
         result_tab.SetCSS("border", "3px solid black");
@@ -321,5 +323,24 @@ class QueueManager {
         result_tab.GetCell(0, 7).SetHeader() << "Num Defect";
 
         my_div_ << result_tab;
+    }
+
+    void DivAnimTable(SimplePDWorld world, int run_id) {
+        emp::web::Table my_table = my_div_.Find(table_id);
+        // Update the table.
+        int line_id = my_table.GetNumRows();
+        my_table.Rows(line_id + 1);
+        my_table.GetCell(line_id, 0) << run_id;
+        my_table.GetCell(line_id, 1) << world.GetR();
+        my_table.GetCell(line_id, 2) << world.GetU();
+        my_table.GetCell(line_id, 3) << world.GetN();
+        my_table.GetCell(line_id, 4) << world.GetE();
+        my_table.GetCell(line_id, 5) << "Waiting...";  // world.GetE();
+        my_table.GetCell(line_id, 6) << "Waiting...";  // world.CountCoop();
+        my_table.GetCell(line_id, 7) << "Waiting...";  // (world.GetN() - world.CountCoop());
+
+        // Draw the new table.
+        my_table.CellsCSS("border", "1px solid black");
+        my_table.Redraw();
     }
 };

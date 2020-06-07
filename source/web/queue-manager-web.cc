@@ -170,7 +170,6 @@ int main() {
         auto result_tab = doc.Table("result_tab");
         for (int run_id = 0; run_id < num_runs; run_id++) {
             run_list.AddRun(world.GetR(), world.GetU(), world.GetN(), world.GetE());
-
             // Update the table.
             int line_id = result_tab.GetNumRows();
             result_tab.Rows(line_id + 1);
@@ -186,6 +185,8 @@ int main() {
             // Draw the new table.
             result_tab.CellsCSS("border", "1px solid black");
             result_tab.Redraw();
+
+            run_list.DivAnimTable(world, run_id);
         }
     },
                   "Queue", "queue_but");
@@ -209,5 +210,6 @@ int main() {
     DrawCanvas();
 
     run_list.DivAddTable(1, 8, "test");
+    doc << "<br>";
     doc << run_list.GetDiv();
 }
