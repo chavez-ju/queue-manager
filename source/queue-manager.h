@@ -256,7 +256,6 @@ struct RunInfo {
         : id(_id), r(_r), u(_u), N(_N), E(_E), cur_epoch(0), num_coop(0), num_defect(0) { ; }
 };
 
-// make sure to add 3 slashes for documentation (not in this case)
 class QueueManager {
    private:
     std::queue<RunInfo> runs;
@@ -313,7 +312,7 @@ class QueueManager {
         result_tab.SetCSS("border", "3px solid black");
         result_tab.CellsCSS("border", "1px solid black");
 
-        result_tab.GetCell(0, 0).SetHeader() << "TESTING";
+        result_tab.GetCell(0, 0).SetHeader() << "Run";
         result_tab.GetCell(0, 1).SetHeader() << "<i>r</i>";
         result_tab.GetCell(0, 2).SetHeader() << "<i>u</i>";
         result_tab.GetCell(0, 3).SetHeader() << "<i>N</i>";
@@ -325,7 +324,8 @@ class QueueManager {
         my_div_ << result_tab;
     }
 
-    void DivAnimTable(SimplePDWorld world, int run_id) {
+    /// Extends table once button is clicked
+    void DivButtonTable(SimplePDWorld world, int run_id) {
         emp::web::Table my_table = my_div_.Find(table_id);
         // Update the table.
         int line_id = my_table.GetNumRows();
@@ -342,5 +342,15 @@ class QueueManager {
         // Draw the new table.
         my_table.CellsCSS("border", "1px solid black");
         my_table.Redraw();
+    }
+
+    /// Run info in table is updated
+    void DivInfoTable(size_t id, size_t cur_epoch, size_t num_coop, size_t num_defect) {
+        emp::web::Table my_table = my_div_.Find(table_id);
+        my_table.Freeze();
+        my_table.GetCell(id + 1, 5).ClearChildren() << cur_epoch;
+        my_table.GetCell(id + 1, 6).ClearChildren() << num_coop;
+        my_table.GetCell(id + 1, 7).ClearChildren() << num_defect;
+        my_table.Activate();
     }
 };
