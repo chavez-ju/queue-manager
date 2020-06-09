@@ -353,4 +353,41 @@ class QueueManager {
         my_table.GetCell(id + 1, 7).ClearChildren() << num_defect;
         my_table.Activate();
     }
+
+    void DivTableCalc(SimplePDWorld& world) {
+        size_t id = FrontRun().id;
+        size_t cur_epoch = world.GetEpoch();
+        RunInfo& current_run = FrontRun();
+        if (FrontRun().E <= cur_epoch) {  // Are we done with this run?
+            RemoveRun();                  // Updates to the next run
+        }
+        current_run.cur_epoch = cur_epoch;
+        current_run.num_coop = world.CountCoop();
+        current_run.num_defect = current_run.N - current_run.num_coop;
+
+        DivInfoTable(id, cur_epoch, current_run.num_coop, current_run.num_defect);
+    }
+
+    /// Creates area for user to input how many runs will be queued
+    void DivAddTextArea(SimplePDWorld& world) {
+        emp::web::TextArea run_input([&world](const std::string& str) {
+            size_t num_runs = emp::from_string<size_t>(str);
+            world.SetNumRuns(num_runs); }, "run_count");
+
+        run_input.SetText(emp::to_string(world.GetNumRuns()));
+        my_div_ << run_input;
+    }
+
+    /// Creates queue button
+    void DivButton(SimplePDWorld& world) {
+        emp::web::Button my_button([&]() {
+            size_t num_runs = world.GetNumRuns();
+            for (int run_id = 0; run_id < num_runs; run_id++) {
+                AddRun(world.GetR(), world.GetU(), world.GetN(), world.GetE());
+                DivButtonTable(world, run_id);
+            }
+        },
+                                   "Queue", "queue_but");
+        my_div_ << my_button;
+    }
 };

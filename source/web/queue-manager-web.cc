@@ -79,18 +79,7 @@ int main() {
         world.Run(anim_step);
         DrawCanvas();
         if (!run_list.IsEmpty()) {
-            // Possibly can get rid of?
-            size_t id = (run_list.FrontRun()).id;
-            size_t cur_epoch = world.GetEpoch();
-            RunInfo& current_run = run_list.FrontRun();
-            if ((run_list.FrontRun()).E <= cur_epoch) {  // Are we done with this run?
-                run_list.RemoveRun();                    // Updates to the next run
-            }
-            current_run.cur_epoch = cur_epoch;
-            current_run.num_coop = world.CountCoop();
-            current_run.num_defect = current_run.N - current_run.num_coop;
-
-            run_list.DivInfoTable(id, cur_epoch, current_run.num_coop, current_run.num_defect);
+            run_list.DivTableCalc(world);  //calculations for table
         }
     });
 
@@ -152,29 +141,14 @@ int main() {
         << "<br>"
         << "How many runs? ";
 
-    auto run_input = doc.AddTextArea([](const std::string& str) {
-        size_t num_runs = emp::from_string<size_t>(str);
-        world.SetNumRuns(num_runs);
-    },
-                                     "run_count");
-    run_input.SetText(emp::to_string(world.GetNumRuns()));
+    run_list.DivAddTextArea(world);
 
-    doc.AddButton([run_input]() {
-        //size_t num_runs = emp::from_string<size_t>(run_input.GetText());
-        size_t num_runs = world.GetNumRuns();
-        for (int run_id = 0; run_id < num_runs; run_id++) {
-            run_list.AddRun(world.GetR(), world.GetU(), world.GetN(), world.GetE());
-
-            run_list.DivButtonTable(world, run_id);
-        }
-    },
-                  "Queue", "queue_but");
+    run_list.DivButton(world);
 
     doc << "<br>";
 
-    run_list.DivAddTable(1, 8, "result_tab");
-    doc << "<br>";
     doc << run_list.GetDiv();
+    run_list.DivAddTable(1, 8, "result_tab");
 
     DrawCanvas();
 }
