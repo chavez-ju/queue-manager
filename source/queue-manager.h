@@ -4,7 +4,6 @@
 #include <string>
 
 #include "base/vector.h"
-#include "config/config.h"
 #include "tools/Random.h"
 #include "tools/math.h"
 #include "web/Div.h"
@@ -241,30 +240,13 @@ void SimplePDWorld::PrintNeighborInfo(std::ostream& os) {
     os.flush();
 }
 
-EMP_BUILD_CONFIG(Config,
-                 GROUP(DEFAULT_GROUP, "General Settings"),
-                 VALUE(ID, size_t, 0, "table cell id"),
-                 VALUE(R, double, 0.0, "neighborhood radius"),
-                 VALUE(U, double, 0.0, "cost/benefit ratio"),
-                 VALUE(N, size_t, 0, "population size"),
-                 VALUE(E, size_t, 0, "amount of epochs a population should run for"), )
-
-EMP_BUILD_CONFIG(MyConfig,
-                 GROUP(DEFAULT_GROUP, "General Settings"),
-                 VALUE(ID, size_t, 0, "table cell id"),
-                 VALUE(R, double, 0.0, "neighborhood radius"),
-                 VALUE(U, double, 0.0, "cost/benefit ratio"),
-                 VALUE(N, size_t, 0, "population size"),
-                 VALUE(E, size_t, 0, "amount of epochs a population should run for"), )
-
 struct RunInfo {
     size_t id;
+
     double r;
     double u;
     size_t N;
     size_t E;
-
-    //emp::Config& config;
 
     size_t cur_epoch;
     size_t num_coop;
@@ -272,13 +254,10 @@ struct RunInfo {
 
     RunInfo(size_t _id, double _r, double _u, size_t _N, size_t _E)
         : id(_id), r(_r), u(_u), N(_N), E(_E), cur_epoch(0), num_coop(0), num_defect(0) { ; }
-
-    //RunInfo(emp::Config& config_) : config(config_), cur_epoch(0), num_coop(0), num_defect(0) { ; }
 };
 
 class QueueManager {
    private:
-    //MyConfig& my_config;
     std::queue<RunInfo> runs;
     emp::web::Div my_div_;
     std::string table_id;
@@ -298,8 +277,8 @@ class QueueManager {
     }
 
     /// Adds run to queue with run info for paramters
-    void AddRun(size_t id, double r, double u, size_t N, size_t E) {
-        RunInfo new_run(id, r, u, N, E);
+    void AddRun(double r, double u, size_t N, size_t E) {
+        RunInfo new_run(runs.size(), r, u, N, E);
         runs.push(new_run);
     }
 
@@ -316,7 +295,7 @@ class QueueManager {
     }
 
     /* Possibly make dive a class of its own */
-    /// Returns this div
+    /// Returns this dic
     emp::web::Div GetDiv() {
         return my_div_;
     }
@@ -401,7 +380,7 @@ class QueueManager {
 
     /// Creates queue button
     void DivButton(SimplePDWorld& world) {
-        emp::web::Button my_button([&world, this]() {
+        emp::web::Button my_button([&]() {
             size_t num_runs = world.GetNumRuns();
             for (int run_id = 0; run_id < num_runs; run_id++) {
                 AddRun(world.GetR(), world.GetU(), world.GetN(), world.GetE());
