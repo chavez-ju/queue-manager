@@ -143,7 +143,7 @@ int main() {
 
     run_list.DivAddTextArea(world);
 
-    run_list.DivButton(world);
+    //run_list.DivButton(world);
 
     doc << "<br>";
 
