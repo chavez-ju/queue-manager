@@ -11,8 +11,8 @@ namespace UI = emp::web;
 const double world_size = 600;
 
 UI::Document doc("emp_base");
-SimplePDWorld world;
-QueueManager run_list;
+emp::SimplePDWorld world;
+emp::QueueManager run_list;
 
 int cur_x = -1;
 int cur_y = -1;
@@ -21,13 +21,13 @@ void DrawCanvas() {
     UI::Canvas canvas = doc.Canvas("canvas");
     canvas.Clear("black");
 
-    const emp::vector<Org>& pop = world.GetPop();
+    const emp::vector<emp::Org>& pop = world.GetPop();
 
     if (cur_x >= 0) {
         canvas.Circle(cur_x, cur_y, world_size * world.GetR(), "pink");
     }
 
-    for (const Org& org : pop) {
+    for (const emp::Org& org : pop) {
         if (org.coop) {
             canvas.Circle(org.x * world_size, org.y * world_size, 2, "blue", "#8888FF");
         } else {

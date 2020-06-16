@@ -1,13 +1,24 @@
 #pragma once
 
+#include <iostream>
 #include <queue>
 #include <string>
 
 #include "base/vector.h"
+#include "config/config.h"
 #include "tools/Random.h"
 #include "tools/math.h"
 #include "web/Div.h"
 #include "web/web.h"
+
+EMP_BUILD_CONFIG(MyConfig,
+                 GROUP(DEFAULT_GROUP, "General Settings"),
+                 VALUE(R, double, 0.02, "neighborhood radius"),
+                 VALUE(U, double, 0.175, "cost/benefit ratio"),
+                 VALUE(N, size_t, 6400, "population size"),
+                 VALUE(E, size_t, 5000, "number of epochs a population should run for"), )
+
+namespace emp {
 
 struct Org {
     double x;
@@ -241,23 +252,21 @@ void SimplePDWorld::PrintNeighborInfo(std::ostream& os) {
 }
 
 struct RunInfo {
-    size_t id;
+    MyConfig& config;
 
-    double r;
-    double u;
-    size_t N;
-    size_t E;
+    size_t id;
 
     size_t cur_epoch;
     size_t num_coop;
     size_t num_defect;
 
-    RunInfo(size_t _id, double _r, double _u, size_t _N, size_t _E)
-        : id(_id), r(_r), u(_u), N(_N), E(_E), cur_epoch(0), num_coop(0), num_defect(0) { ; }
+    RunInfo(MyConfig& _config, size_t _id)
+        : config(_config), id(_id), cur_epoch(0), num_coop(0), num_defect(0) { ; }
 };
 
 class QueueManager {
    private:
+    //MyConfig config;
     std::queue<RunInfo> runs;
     emp::web::Div my_div_;
     std::string table_id;
@@ -277,8 +286,8 @@ class QueueManager {
     }
 
     /// Adds run to queue with run info for paramters
-    void AddRun(double r, double u, size_t N, size_t E) {
-        RunInfo new_run(runs.size(), r, u, N, E);
+    void AddRun(MyConfig& config) {
+        RunInfo new_run(config, runs.size());
         runs.push(new_run);
     }
 
@@ -304,6 +313,8 @@ class QueueManager {
         my_div_.Clear();
     }
 
+    /// Removes parameters for column
+
     /// Initializes table to web
     void DivAddTable(size_t row, size_t col, std::string id) {
         table_id = id;
@@ -313,16 +324,31 @@ class QueueManager {
         result_tab.CellsCSS("border", "1px solid black");
 
         result_tab.GetCell(0, 0).SetHeader() << "Run";
-        result_tab.GetCell(0, 1).SetHeader() << "<i>r</i>";
-        result_tab.GetCell(0, 2).SetHeader() << "<i>u</i>";
-        result_tab.GetCell(0, 3).SetHeader() << "<i>N</i>";
-        result_tab.GetCell(0, 4).SetHeader() << "<i>E</i>";
-        result_tab.GetCell(0, 5).SetHeader() << "Epoch";
-        result_tab.GetCell(0, 6).SetHeader() << "Num Coop";
-        result_tab.GetCell(0, 7).SetHeader() << "Num Defect";
+
+        int count = 1;
+        for (auto group : config.group_set) {
+            //assuming all queued runs have the same config
+            for (auto i = 0; i < group->GetSize(); ++i) {
+                std::string str = group->GetEntry(i)->GetName();
+                result_tab.GetCell(0, count).SetHeader() << str;
+                count += 1;
+            }
+        }
+
+        /* Hard coded for only 3 addition columns (must change if these can be manipulated)
+        by the user */
+        result_tab.GetCell(0, count).SetHeader() << "Epoch";
+        result_tab.GetCell(0, ++count).SetHeader() << "Num Coop";
+        result_tab.GetCell(0, ++count).SetHeader() << "Num Defect";
 
         my_div_ << result_tab;
     }
+
+    /*Function to delete whats already in the FILLED table
+     - Do this my taking in the variable name of the config object and removing the column
+     that corresponds to that variable name if table is already showing 
+     - If table is not showing, store variables in a vector to show, then remove an element
+     and display whatever is in vector */
 
     /// Extends table once button is clicked
     void DivButtonTable(SimplePDWorld world, int run_id) {
@@ -391,3 +417,5 @@ class QueueManager {
         my_div_ << my_button;
     }
 };
+
+}  // namespace emp
