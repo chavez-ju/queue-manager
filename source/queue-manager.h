@@ -1,8 +1,10 @@
 #pragma once
 
+#include <algorithm>
 #include <iostream>
 #include <queue>
 #include <string>
+#include <vector>
 
 #include "base/vector.h"
 #include "config/config.h"
@@ -13,10 +15,10 @@
 
 EMP_BUILD_CONFIG(MyConfig,
                  GROUP(DEFAULT_GROUP, "General Settings"),
-                 VALUE(R, double, 0.02, "neighborhood radius"),
-                 VALUE(U, double, 0.175, "cost / benefit ratio"),
-                 VALUE(N, size_t, 6400, "population size"),
-                 VALUE(E, size_t, 5000, "How many epochs should a population run for?"), )
+                 VALUE(TEST_R, double, 0.02, "neighborhood radius"),
+                 VALUE(TEST_U, double, 0.175, "cost / benefit ratio"),
+                 VALUE(TEST_N, size_t, 6400, "population size"),
+                 VALUE(TEST_E, size_t, 5000, "How many epochs should a population run for?"), )
 
 namespace emp {
 
@@ -256,31 +258,37 @@ struct RunInfo {
 
     size_t id;
 
-    double r;
-    double u;
-    size_t N;
-    size_t E;
-
     size_t cur_epoch;
     size_t num_coop;
     size_t num_defect;
 
-    RunInfo(MyConfig _config, size_t _id, double _r, double _u, size_t _N, size_t _E)
-        : config(_config), id(_id), r(_r), u(_u), N(_N), E(_E), cur_epoch(0), num_coop(0), num_defect(0) { ; }
+    RunInfo(MyConfig _config, size_t _id)
+        : config(_config), id(_id), cur_epoch(0), num_coop(0), num_defect(0) { ; }
 };
 
 class QueueManager {
    private:
-    MyConfig new_config;
+    MyConfig queue_config;
+
     std::queue<RunInfo> runs;
     emp::web::Div my_div_;
     std::string table_id;
+
+    /// config variables to display to user
+    std::vector<std::string> active_parameters;
 
    public:
     /// Default constructor
     QueueManager() = default;
 
-    QueueManager(MyConfig _config) : new_config(_config) { ; }
+    /// Constructor w/ config object
+    QueueManager(const MyConfig& _config) : queue_config(_config) {
+        for (auto group : queue_config.group_set) {
+            for (size_t i = 0; i < group->GetSize(); ++i) {
+                active_parameters.push_back(group->GetEntry(i)->GetName());
+            }
+        }
+    }
 
     /// Checks if queue is empty
     bool IsEmpty() {
@@ -291,12 +299,13 @@ class QueueManager {
     size_t RunsRemaining() {
         return runs.size();
     }
+    /*
     /// Adds run to queue with run info for paramters
-    void AddRun(double r, double u, size_t N, size_t E) {
-        RunInfo new_run(new_config, runs.size(), r, u, N, E);
+    void AddRun() {
+        RunInfo new_run(queue_config, runs.size());
         runs.push(new_run);
     }
-
+*/
     /// Remove run from front of queue
     void RemoveRun() {
         emp_assert(IsEmpty(), "Queue is empty! Cannot remove!");
@@ -309,7 +318,6 @@ class QueueManager {
         return runs.front();
     }
 
-    /* Possibly make div a class of its own */
     /// Returns this div
     emp::web::Div GetDiv() {
         return my_div_;
@@ -317,6 +325,12 @@ class QueueManager {
     /// Clears the content of this div
     void ResetDiv() {
         my_div_.Clear();
+    }
+
+    /// Deletes a table parameter BEFORE runs are queued - TWEAK SO IT DOESN"T HAVE TO RE-DRAW TABLE EVERY TIME
+    void DeleteParameter(const string& parameter) {
+        active_parameters.erase(std::remove(active_parameters.begin(), active_parameters.end(), parameter), active_parameters.end());
+        DivAddTable(1, active_parameters.size() + 4, table_id);
     }
 
     /// Initializes table to web
@@ -329,11 +343,14 @@ class QueueManager {
 
         result_tab.GetCell(0, 0).SetHeader() << "Run";
 
+        // Displays config parameters onto table
         int count = 1;
-        for (auto group : new_config.group_set) {
+        for (auto group : queue_config.group_set) {
             for (size_t i = 0; i < group->GetSize(); ++i) {
-                result_tab.GetCell(0, count).SetHeader() << group->GetEntry(i)->GetName();
-                ++count;
+                if (std::find(active_parameters.begin(), active_parameters.end(), group->GetEntry(i)->GetName()) != active_parameters.end()) {
+                    result_tab.GetCell(0, count).SetHeader() << group->GetEntry(i)->GetName();
+                    ++count;
+                }
             }
         }
 
@@ -381,6 +398,7 @@ class QueueManager {
         my_table.Activate();
     }
 
+    /*
     void DivTableCalc(SimplePDWorld& world) {
         size_t id = FrontRun().id;
         size_t cur_epoch = world.GetEpoch();
@@ -394,7 +412,8 @@ class QueueManager {
 
         DivInfoTable(id, cur_epoch, current_run.num_coop, current_run.num_defect);
     }
-
+*/
+    /*
     /// Creates area for user to input how many runs will be queued
     void DivAddTextArea(SimplePDWorld& world) {
         emp::web::TextArea run_input([&world](const std::string& str) {
@@ -404,6 +423,7 @@ class QueueManager {
         run_input.SetText(emp::to_string(world.GetNumRuns()));
         my_div_ << run_input;
     }
+*/
     /*
     /// Creates queue button
     void DivButton(SimplePDWorld& world) {
@@ -417,7 +437,7 @@ class QueueManager {
                                    "Queue", "queue_but");
         my_div_ << my_button;
     }
-    */
+*/
 };
 
 }  // namespace emp
