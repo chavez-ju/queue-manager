@@ -4,7 +4,6 @@
 #include <iostream>
 #include <queue>
 #include <string>
-#include <vector>
 
 #include "base/vector.h"
 #include "config/config.h"
@@ -275,7 +274,7 @@ class QueueManager {
     std::string table_id;
 
     /// config variables to display to user
-    std::vector<std::string> active_parameters;
+    emp::vector<std::string> active_parameters;
 
    public:
     /// Default constructor
@@ -299,13 +298,15 @@ class QueueManager {
     size_t RunsRemaining() {
         return runs.size();
     }
-    /*
-    /// Adds run to queue with run info for paramters
-    void AddRun() {
-        RunInfo new_run(queue_config, runs.size());
+
+    /// Adds run to queue with run info for parameters
+    void AddRun(const MyConfig& config) {
+        RunInfo new_run(config, runs.size());
+        std::cout << "in AddRun - before push" << std::endl;
         runs.push(new_run);
+        std::cout << "in AddRun - after push" << std::endl;
     }
-*/
+
     /// Remove run from front of queue
     void RemoveRun() {
         emp_assert(IsEmpty(), "Queue is empty! Cannot remove!");
@@ -328,7 +329,7 @@ class QueueManager {
     }
 
     /// Deletes a table parameter BEFORE runs are queued - TWEAK SO IT DOESN"T HAVE TO RE-DRAW TABLE EVERY TIME
-    void DeleteParameter(const string& parameter) {
+    void DeleteParameter(const std::string& parameter) {
         active_parameters.erase(std::remove(active_parameters.begin(), active_parameters.end(), parameter), active_parameters.end());
         DivAddTable(1, active_parameters.size() + 4, table_id);
     }
@@ -360,7 +361,6 @@ class QueueManager {
         result_tab.GetCell(0, 3).SetHeader() << "<i>N</i>";
         result_tab.GetCell(0, 4).SetHeader() << "<i>E</i>";
         */
-
         result_tab.GetCell(0, count).SetHeader() << "Epoch";
         result_tab.GetCell(0, ++count).SetHeader() << "Num Coop";
         result_tab.GetCell(0, ++count).SetHeader() << "Num Defect";
@@ -373,6 +373,7 @@ class QueueManager {
         emp::web::Table my_table = my_div_.Find(table_id);
         // Update the table.
         int line_id = my_table.GetNumRows();
+        std::cout << line_id << std::endl;
         my_table.Rows(line_id + 1);
         my_table.GetCell(line_id, 0) << run_id;
         my_table.GetCell(line_id, 1) << world.GetR();
@@ -398,22 +399,22 @@ class QueueManager {
         my_table.Activate();
     }
 
-    /*
     void DivTableCalc(SimplePDWorld& world) {
         size_t id = FrontRun().id;
         size_t cur_epoch = world.GetEpoch();
         RunInfo& current_run = FrontRun();
-        if (FrontRun().E <= cur_epoch) {  // Are we done with this run?
-            RemoveRun();                  // Updates to the next run
+
+        if ((current_run.config).TEST_E() <= cur_epoch) {  // Are we done with this run?
+            RemoveRun();                                   // Updates to the next run
         }
+
         current_run.cur_epoch = cur_epoch;
         current_run.num_coop = world.CountCoop();
-        current_run.num_defect = current_run.N - current_run.num_coop;
+        current_run.num_defect = (current_run.config).TEST_N() - current_run.num_coop;
 
         DivInfoTable(id, cur_epoch, current_run.num_coop, current_run.num_defect);
     }
-*/
-    /*
+
     /// Creates area for user to input how many runs will be queued
     void DivAddTextArea(SimplePDWorld& world) {
         emp::web::TextArea run_input([&world](const std::string& str) {
@@ -423,21 +424,58 @@ class QueueManager {
         run_input.SetText(emp::to_string(world.GetNumRuns()));
         my_div_ << run_input;
     }
-*/
-    /*
-    /// Creates queue button
+
+    /// Creates queue button - TWEAK SO THIS CAN WORK FOR OTHER WORLDS, NOT JUST SimplePDWorld
     void DivButton(SimplePDWorld& world) {
         emp::web::Button my_button([&]() {
             size_t num_runs = world.GetNumRuns();
             for (int run_id = 0; run_id < num_runs; run_id++) {
-                AddRun(world.GetR(), world.GetU(), world.GetN(), world.GetE());
+                std::cout << num_runs << std::endl;
+                std::cout << "run: " << run_id << std::endl;
+                MyConfig new_config = queue_config;
+                /*
+                for (auto group : new_config.group_set) {
+                    for (size_t i = 0; i < group->GetSize(); ++i) {
+                        // hard coded - fix!!
+                        std::string setting_name = group->GetEntry(i)->GetName();
+                        if (i == 0) {
+                            std::string get_str = std::to_string(world.GetR());
+                            new_config(setting_name, get_str);
+                        } else if (i == 1) {
+                            std::string get_str = std::to_string(world.GetU());
+                            new_config(setting_name, get_str);
+                        } else if (i == 2) {
+                            std::string get_str = std::to_string(world.GetN());
+                            new_config(setting_name, get_str);
+                        } else if (i == 3) {
+                            std::string get_str = std::to_string(world.GetE());
+                            new_config(setting_name, get_str);
+                        }
+                    }
+                }
+                */
+                new_config.TEST_R(world.GetR());
+                new_config.TEST_U(world.GetU());
+                new_config.TEST_N(world.GetN());
+                new_config.TEST_E(world.GetE());
+                for (auto group : new_config.group_set) {
+                    std::cout << run_id << " - new config below: " << std::endl;
+                    for (size_t i = 0; i < group->GetSize(); ++i) {
+                        std::string str = group->GetEntry(i)->GetName();
+                        std::cout << str << " , value =  " << new_config(str) << std::endl;
+                    }
+                    std::cout << std::endl;
+                }
+                std::cout << "before AddRun" << std::endl;
+                AddRun(new_config);
+                std::cout << "made it past AddRun!" << std::endl;
                 DivButtonTable(world, run_id);
+                std::cout << "made it past DivButtonTable" << std::endl;
             }
         },
                                    "Queue", "queue_but");
         my_div_ << my_button;
     }
-*/
 };
 
 }  // namespace emp

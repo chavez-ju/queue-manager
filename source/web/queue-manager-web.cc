@@ -12,8 +12,8 @@ const double world_size = 600;
 
 UI::Document doc("emp_base");
 emp::SimplePDWorld world;
-MyConfig config;
-emp::QueueManager run_list(config);
+MyConfig world_config;
+emp::QueueManager run_list(world_config);
 
 int cur_x = -1;
 int cur_y = -1;
@@ -73,14 +73,14 @@ int main() {
             // Possibly can get rid of?
             auto& run = run_list.FrontRun();  // Referencing current run
             if (run.cur_epoch == 0) {         // Are we starting a new run?
-                //world.Setup(run.r, run.u, run.N, run.E);
+                world.Setup((run.config).TEST_R(), (run.config).TEST_U(), (run.config).TEST_N(), (run.config).TEST_E());
                 DrawCanvas();
             }
         }
         world.Run(anim_step);
         DrawCanvas();
         if (!run_list.IsEmpty()) {
-            //run_list.DivTableCalc(world);  //calculations for table
+            run_list.DivTableCalc(world);  //calculations for table
         }
     });
 
@@ -142,9 +142,9 @@ int main() {
         << "<br>"
         << "How many runs? ";
 
-    //run_list.DivAddTextArea(world);
+    run_list.DivAddTextArea(world);
 
-    //run_list.DivButton(world);
+    run_list.DivButton(world);
 
     doc << "<br>";
 
