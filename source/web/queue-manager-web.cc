@@ -3,6 +3,7 @@
 //  Released under the MIT Software license; see doc/LICENSE
 // PD WORLD EXAMPLE
 
+#include "../configsetup.h"
 #include "../queue-manager.h"
 #include "web/web.h"
 
@@ -11,8 +12,10 @@ namespace UI = emp::web;
 const double world_size = 600;
 
 UI::Document doc("emp_base");
-SimplePDWorld world;
-QueueManager run_list;
+// Config created
+emp::SettingConfig config = emp::setup();
+emp::QueueManager run_list(config);
+emp::SimplePDWorld world;
 
 int cur_x = -1;
 int cur_y = -1;
@@ -21,13 +24,13 @@ void DrawCanvas() {
     UI::Canvas canvas = doc.Canvas("canvas");
     canvas.Clear("black");
 
-    const emp::vector<Org>& pop = world.GetPop();
+    const emp::vector<emp::Org>& pop = world.GetPop();
 
     if (cur_x >= 0) {
         canvas.Circle(cur_x, cur_y, world_size * world.GetR(), "pink");
     }
 
-    for (const Org& org : pop) {
+    for (const emp::Org& org : pop) {
         if (org.coop) {
             canvas.Circle(org.x * world_size, org.y * world_size, 2, "blue", "#8888FF");
         } else {
@@ -69,10 +72,10 @@ int main() {
     auto& anim = doc.AddAnimation("anim_world", []() {
         // if queue has runs
         if (!run_list.IsEmpty()) {
-            // Possibly can get rid of?
-            auto& run = run_list.FrontRun();  // Referencing current run
-            if (run.cur_epoch == 0) {         // Are we starting a new run?
-                world.Setup(run.r, run.u, run.N, run.E);
+            emp::RunInfo run = run_list.FrontRun();  // Referencing current run
+            if (run.cur_epoch == 0) {                // Are we starting a new run?
+                world.Setup(run.runinfo_config.GetValue<double>("r_value"), run.runinfo_config.GetValue<double>("u_value"), run.runinfo_config.GetValue<size_t>("N_value"), run.runinfo_config.GetValue<size_t>("E_value"));
+
                 DrawCanvas();
             }
         }

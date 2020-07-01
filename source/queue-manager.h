@@ -2,12 +2,16 @@
 
 #include <queue>
 #include <string>
+#include <vector>
 
 #include "base/vector.h"
+#include "config/SettingConfig.h"
 #include "tools/Random.h"
 #include "tools/math.h"
 #include "web/Div.h"
 #include "web/web.h"
+
+namespace emp {
 
 struct Org {
     double x;
@@ -241,19 +245,16 @@ void SimplePDWorld::PrintNeighborInfo(std::ostream& os) {
 }
 
 struct RunInfo {
-    size_t id;
+    SettingConfig runinfo_config;
 
-    double r;
-    double u;
-    size_t N;
-    size_t E;
+    size_t id;
 
     size_t cur_epoch;
     size_t num_coop;
     size_t num_defect;
 
-    RunInfo(size_t _id, double _r, double _u, size_t _N, size_t _E)
-        : id(_id), r(_r), u(_u), N(_N), E(_E), cur_epoch(0), num_coop(0), num_defect(0) { ; }
+    RunInfo(SettingConfig _config, size_t _id)
+        : runinfo_config(_config), id(_id), cur_epoch(0), num_coop(0), num_defect(0) { ; }
 };
 
 class QueueManager {
@@ -261,10 +262,20 @@ class QueueManager {
     std::queue<RunInfo> runs;
     emp::web::Div my_div_;
     std::string table_id;
+    SettingConfig queue_config;
 
    public:
     /// Default constructor
     QueueManager() = default;
+
+    /// Config constructor
+    QueueManager(SettingConfig _config) {
+        queue_config = _config;
+    }
+
+    auto GetQueue() {
+        return runs;
+    }
 
     /// Checks if queue is empty
     bool IsEmpty() {
@@ -277,20 +288,20 @@ class QueueManager {
     }
 
     /// Adds run to queue with run info for paramters
-    void AddRun(double r, double u, size_t N, size_t E) {
-        RunInfo new_run(runs.size(), r, u, N, E);
+    void AddRun(SettingConfig other) {
+        RunInfo new_run(other, runs.size());
         runs.push(new_run);
     }
 
     /// Remove run from front of queue
     void RemoveRun() {
-        emp_assert(IsEmpty(), "Queue is empty! Cannot remove!");
+        emp_assert(!IsEmpty(), "Queue is empty! Cannot remove!");
         runs.pop();
     }
 
-    /// Returns the element at the front of the queue
+    /// Front Run Getter
     RunInfo& FrontRun() {
-        emp_assert(IsEmpty(), "Queue is empty! Cannot remove!");
+        emp_assert(!IsEmpty(), "Queue is empty! Cannot access Front!");
         return runs.front();
     }
 
@@ -313,28 +324,31 @@ class QueueManager {
         result_tab.CellsCSS("border", "1px solid black");
 
         result_tab.GetCell(0, 0).SetHeader() << "Run";
-        result_tab.GetCell(0, 1).SetHeader() << "<i>r</i>";
-        result_tab.GetCell(0, 2).SetHeader() << "<i>u</i>";
-        result_tab.GetCell(0, 3).SetHeader() << "<i>N</i>";
-        result_tab.GetCell(0, 4).SetHeader() << "<i>E</i>";
-        result_tab.GetCell(0, 5).SetHeader() << "Epoch";
-        result_tab.GetCell(0, 6).SetHeader() << "Num Coop";
-        result_tab.GetCell(0, 7).SetHeader() << "Num Defect";
+        int i = 1;
+        std::vector<std::string> setting_names = queue_config.GetSettingMapNames();
+        for (const auto& p : setting_names) {
+            result_tab.GetCell(0, i).SetHeader() << "<i>" << p << "</i>";
+            ++i;
+        }
+        result_tab.GetCell(0, i).SetHeader() << "Epoch";
+        result_tab.GetCell(0, ++i).SetHeader() << "Num Coop";
+        result_tab.GetCell(0, ++i).SetHeader() << "Num Defect";
 
         my_div_ << result_tab;
     }
 
     /// Extends table once button is clicked
-    void DivButtonTable(SimplePDWorld world, int run_id) {
+    void DivButtonTable(const SimplePDWorld& world, int run_id) {
         emp::web::Table my_table = my_div_.Find(table_id);
+
         // Update the table.
         int line_id = my_table.GetNumRows();
         my_table.Rows(line_id + 1);
         my_table.GetCell(line_id, 0) << run_id;
-        my_table.GetCell(line_id, 1) << world.GetR();
-        my_table.GetCell(line_id, 2) << world.GetU();
-        my_table.GetCell(line_id, 3) << world.GetN();
-        my_table.GetCell(line_id, 4) << world.GetE();
+        my_table.GetCell(line_id, 1) << world.GetE();
+        my_table.GetCell(line_id, 2) << world.GetN();
+        my_table.GetCell(line_id, 3) << world.GetR();
+        my_table.GetCell(line_id, 4) << world.GetU();
         my_table.GetCell(line_id, 5) << "Waiting...";  // world.GetE();
         my_table.GetCell(line_id, 6) << "Waiting...";  // world.CountCoop();
         my_table.GetCell(line_id, 7) << "Waiting...";  // (world.GetN() - world.CountCoop());
@@ -358,12 +372,12 @@ class QueueManager {
         size_t id = FrontRun().id;
         size_t cur_epoch = world.GetEpoch();
         RunInfo& current_run = FrontRun();
-        if (FrontRun().E <= cur_epoch) {  // Are we done with this run?
-            RemoveRun();                  // Updates to the next run
+        if (current_run.runinfo_config.GetValue<size_t>("E_value") <= cur_epoch) {  // Are we done with this run?
+            RemoveRun();                                                            // Updates to the next run
         }
         current_run.cur_epoch = cur_epoch;
         current_run.num_coop = world.CountCoop();
-        current_run.num_defect = current_run.N - current_run.num_coop;
+        current_run.num_defect = current_run.runinfo_config.GetValue<size_t>("N_value") - current_run.num_coop;
 
         DivInfoTable(id, cur_epoch, current_run.num_coop, current_run.num_defect);
     }
@@ -383,7 +397,12 @@ class QueueManager {
         emp::web::Button my_button([&]() {
             size_t num_runs = world.GetNumRuns();
             for (int run_id = 0; run_id < num_runs; run_id++) {
-                AddRun(world.GetR(), world.GetU(), world.GetN(), world.GetE());
+                SettingConfig new_config;
+                new_config.AddSetting<double>("r_value") = {world.GetR()};
+                new_config.AddSetting<double>("u_value") = {world.GetU()};
+                new_config.AddSetting<size_t>("N_value") = {world.GetN()};
+                new_config.AddSetting<size_t>("E_value") = {world.GetE()};
+                AddRun(new_config);
                 DivButtonTable(world, run_id);
             }
         },
@@ -391,3 +410,5 @@ class QueueManager {
         my_div_ << my_button;
     }
 };
+
+}  // namespace emp
