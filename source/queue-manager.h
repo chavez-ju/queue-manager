@@ -402,13 +402,15 @@ class QueueManager {
                 new_config.AddSetting<double>("u_value") = {world.GetU()};
                 new_config.AddSetting<size_t>("N_value") = {world.GetN()};
                 new_config.AddSetting<size_t>("E_value") = {world.GetE()};
-                AddRun(new_config);
+                AddRun(queue_config);
                 DivButtonTable(world, run_id);
             }
         },
                                    "Queue", "queue_but");
         my_div_ << my_button;
     }
+
+    /// Parses non-fixed variable instructions
 };
 
 }  // namespace emp
