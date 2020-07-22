@@ -3,8 +3,12 @@
 //  Released under the MIT Software license; see doc/LICENSE
 // PD WORLD EXAMPLE
 
+#include <functional>
+#include <string>
+
 #include "../configsetup.h"
 #include "../queue-manager.h"
+#include "../simplepdworld.h"
 #include "web/web.h"
 
 namespace UI = emp::web;
@@ -66,6 +70,11 @@ void TogglePlay() {
 int anim_step = 1;
 
 int main() {
+    int x = 4;
+    std::function<std::string()> my_func = [x]() { return std::to_string(x * x); };
+    run_list.AddDepVariable(my_func, "Epoch");
+    run_list.AddDepVariable(my_func, "Num Coop");
+    run_list.AddDepVariable(my_func, "Num Defect");
     doc << "<h2>Spatial Prisoner's Dilema</h2>";
     auto canvas = doc.AddCanvas(world_size, world_size, "canvas");
     // canvas.On("click", CanvasClick);
@@ -82,7 +91,9 @@ int main() {
         world.Run(anim_step);
         DrawCanvas();
         if (!run_list.IsEmpty()) {
-            run_list.DivTableCalc(world);  //calculations for table
+            run_list.SetEpoch(world.GetEpoch());
+            run_list.SetNumCoop(world.CountCoop());
+            run_list.DivTableCalc();  //calculations for table
         }
     });
 
@@ -146,7 +157,8 @@ int main() {
 
     run_list.DivAddTextArea(world);
 
-    run_list.DivButton(world);
+    size_t num_runs = world.GetNumRuns();
+    run_list.DivButton(num_runs);
 
     doc << "<br>";
 
