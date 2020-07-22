@@ -125,22 +125,29 @@ class QueueManager {
         // Update the table.
         int line_id = my_table.GetNumRows();
         my_table.Rows(line_id + 1);
+        // commented out sections below won't world properly right now because GetValue requires type specification
+        /*
         int col_count = 0;
         my_table.GetCell(line_id, col_count++) << run_id;
         for (const auto& p : queue_config.GetSettingMapNames()) {
             my_table.GetCell(line_id, col_count++) << queue_config.GetValue<size_t>(p);
         }
-        //my_table.GetCell(line_id, 1) << queue_config.GetValue<size_t>("E_value");
-        //my_table.GetCell(line_id, 2) << queue_config.GetValue<size_t>("N_value");
-        //my_table.GetCell(line_id, 3) << queue_config.GetValue<double>("r_value");
-        //my_table.GetCell(line_id, 4) << queue_config.GetValue<double>("u_value");
+        */
+        my_table.GetCell(line_id, 0) << run_id;
 
+        my_table.GetCell(line_id, 1) << queue_config.GetValue<size_t>("E_value");
+        my_table.GetCell(line_id, 2) << queue_config.GetValue<size_t>("N_value");
+        my_table.GetCell(line_id, 3) << queue_config.GetValue<double>("r_value");
+        my_table.GetCell(line_id, 4) << queue_config.GetValue<double>("u_value");
+        /*
         for (int i = 0; dependant_headers.size() <= i; i++) {
             my_table.GetCell(line_id, col_count++) << "Waiting...";  // world.GetE();
         }
-        //my_table.GetCell(line_id, 5) << "Waiting...";  // world.GetE();
-        //my_table.GetCell(line_id, 6) << "Waiting...";  // world.CountCoop();
-        //my_table.GetCell(line_id, 7) << "Waiting...";  // (world.GetN() - world.CountCoop());
+        */
+
+        my_table.GetCell(line_id, 5) << "Waiting...";  // world.GetE();
+        my_table.GetCell(line_id, 6) << "Waiting...";  // world.CountCoop();
+        my_table.GetCell(line_id, 7) << "Waiting...";  // (world.GetN() - world.CountCoop());
 
         // Draw the new table.
         my_table.CellsCSS("border", "1px solid black");
