@@ -193,20 +193,6 @@ class QueueManager {
         return num_runs;
     }
 
-    /*
-    /// Creates area for user to input how many runs will be queued
-    void DivAddTextArea(SimplePDWorld& world) {
-        emp::web::TextArea run_input([&world](const std::string& str) {
-            size_t num_runs = emp::from_string<size_t>(str);
-            world.SetNumRuns(num_runs);
-        },
-                                     "run_count");
-
-        run_input.SetText(emp::to_string(world.GetNumRuns()));
-        display_div << run_input;
-    }
-    */
-
     /// Creates queue button
     void DivButton(size_t num_runs) {
         emp::web::Button my_button([this, num_runs]() {
