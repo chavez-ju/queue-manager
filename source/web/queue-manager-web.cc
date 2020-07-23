@@ -155,10 +155,11 @@ int main() {
         << "<br>"
         << "How many runs? ";
 
-    run_list.DivAddTextArea(world);
+    size_t num_runs = run_list.DivAddTextArea();
+    world.SetNumRuns(num_runs);
 
-    size_t num_runs = world.GetNumRuns();
-    run_list.DivButton(num_runs);
+    size_t queue_runs = world.GetNumRuns();
+    run_list.DivButton(queue_runs);
 
     doc << "<br>";
 

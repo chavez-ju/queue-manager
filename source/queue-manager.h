@@ -1,3 +1,18 @@
+/**
+ *  @note This file is part of Empirical, https://github.com/devosoft/Empirical
+ *  @copyright Copyright (C) Michigan State University, MIT Software license; see doc/LICENSE.md
+ *  @date 2020
+ *
+ *  @file  queue-manager.h
+ *  @brief A tool for processing multiple simulation runs
+ *  @note Status:
+ */
+
+/// The goal of creating this tool is to alleviate the process of running multiple simulations of the same kind within
+/// a queue structure. A user is able to visually see the results of their simulations, and each run held within the queue
+/// runs subsequently after the other. Real time statistics are posted within a table as each run is carried out.
+/// Here is a link to a blogpost that describes this tool's inpsiration, purpose, and required instructions:
+
 #pragma once
 
 #include <functional>
@@ -120,34 +135,18 @@ class QueueManager {
     void DivButtonTable(int run_id) {
         emp::web::Table my_table = display_div.Find(table_id);
 
-        // Have a way to iterate through the SettingConfig without knowing the Setting types
-
         // Update the table.
         int line_id = my_table.GetNumRows();
         my_table.Rows(line_id + 1);
-        // commented out sections below won't world properly right now because GetValue requires type specification
-        /*
         int col_count = 0;
-        my_table.GetCell(line_id, col_count++) << run_id;
-        for (const auto& p : queue_config.GetSettingMapNames()) {
-            my_table.GetCell(line_id, col_count++) << queue_config.GetValue<size_t>(p);
+        my_table.GetCell(line_id, col_count) << run_id;
+        for (auto p : queue_config.GetSettingMapBase()) {
+            my_table.GetCell(line_id, ++col_count) << (*p).AsString();
         }
-        */
-        my_table.GetCell(line_id, 0) << run_id;
 
-        my_table.GetCell(line_id, 1) << queue_config.GetValue<size_t>("E_value");
-        my_table.GetCell(line_id, 2) << queue_config.GetValue<size_t>("N_value");
-        my_table.GetCell(line_id, 3) << queue_config.GetValue<double>("r_value");
-        my_table.GetCell(line_id, 4) << queue_config.GetValue<double>("u_value");
-        /*
-        for (int i = 0; dependant_headers.size() <= i; i++) {
-            my_table.GetCell(line_id, col_count++) << "Waiting...";  // world.GetE();
+        for (int i = 0; i < dependant_headers.size(); i++) {
+            my_table.GetCell(line_id, ++col_count) << "Waiting...";  // world.GetE(); world.CountCoop(); (world.GetN() - world.CountCoop());
         }
-        */
-
-        my_table.GetCell(line_id, 5) << "Waiting...";  // world.GetE();
-        my_table.GetCell(line_id, 6) << "Waiting...";  // world.CountCoop();
-        my_table.GetCell(line_id, 7) << "Waiting...";  // (world.GetN() - world.CountCoop());
 
         // Draw the new table.
         my_table.CellsCSS("border", "1px solid black");
@@ -167,18 +166,34 @@ class QueueManager {
     /// Calculations required for updating table
     void DivTableCalc() {
         size_t id = FrontRun().id;
-        size_t cur_epoch = epoch_;
+        size_t current_epoch = epoch_;
         RunInfo& current_run = FrontRun();
-        if (current_run.runinfo_config.GetValue<size_t>("E_value") <= cur_epoch) {  // Are we done with this run?
-            RemoveRun();                                                            // Updates to the next run
-        }
-        current_run.cur_epoch = cur_epoch;
+
+        current_run.cur_epoch = current_epoch;
         current_run.num_coop = coop_;
         current_run.num_defect = current_run.runinfo_config.GetValue<size_t>("N_value") - current_run.num_coop;
 
-        DivInfoTable(id, cur_epoch, current_run.num_coop, current_run.num_defect);
+        if (current_epoch >= current_run.runinfo_config.GetValue<size_t>("E_value")) {  // Are we done with this run?
+            RemoveRun();                                                                // Updates to the next run
+        }
+
+        DivInfoTable(id, current_epoch, current_run.num_coop, current_run.num_defect);
     }
 
+    /// Creates area for user to input how many runs will be queued
+    size_t DivAddTextArea() {
+        size_t num_runs = 10;
+        emp::web::TextArea run_input([&num_runs](const std::string& str) {
+            num_runs = emp::from_string<size_t>(str);
+        },
+                                     "run_count");
+
+        run_input.SetText(emp::to_string(num_runs));
+        display_div << run_input;
+        return num_runs;
+    }
+
+    /*
     /// Creates area for user to input how many runs will be queued
     void DivAddTextArea(SimplePDWorld& world) {
         emp::web::TextArea run_input([&world](const std::string& str) {
@@ -190,6 +205,7 @@ class QueueManager {
         run_input.SetText(emp::to_string(world.GetNumRuns()));
         display_div << run_input;
     }
+    */
 
     /// Creates queue button
     void DivButton(size_t num_runs) {
