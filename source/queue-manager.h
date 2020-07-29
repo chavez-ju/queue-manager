@@ -4,7 +4,7 @@
  *  @date 2020
  *
  *  @file  queue-manager.h
- *  @brief A tool for processing multiple simulation runs
+ *  @brief A tool for processing multiple simulation runs onto a figure and table, displaying real-time statistics
  *  @note Status:
  */
 
@@ -38,12 +38,13 @@ struct RunInfo {
 
     size_t id;
 
+    // PD world
     size_t cur_epoch;
     size_t num_coop;
-    size_t num_defect;
+    std::string num_defect;
 
     RunInfo(SettingConfig _config, size_t _id)
-        : runinfo_config(_config), id(_id), cur_epoch(0), num_coop(0), num_defect(0) { ; }
+        : runinfo_config(_config), id(_id), cur_epoch(0), num_coop(0), num_defect("") { ; }
 };
 
 /// Primary class that establishes queue for runs and processes them accordingly
@@ -156,7 +157,7 @@ class QueueManager {
     }
 
     /// Run info in table is updated
-    void DivInfoTable(size_t id, size_t cur_epoch, size_t num_coop, size_t num_defect) {
+    void DivInfoTable(size_t id, size_t cur_epoch, size_t num_coop, std::string num_defect) {
         emp::web::Table my_table = display_div.Find(table_id);
         my_table.Freeze();
         my_table.GetCell(id + 1, 5).ClearChildren() << cur_epoch;
@@ -173,8 +174,8 @@ class QueueManager {
 
         current_run.cur_epoch = current_epoch;
         current_run.num_coop = coop_;
-        // Add user function config feature
-        current_run.num_defect = current_run.runinfo_config.GetValue<size_t>("N_value") - current_run.num_coop;
+        // user function configuration
+        current_run.num_defect = (dependant_headers.begin()->second)();
 
         if (current_epoch >= current_run.runinfo_config.GetValue<size_t>("E_value")) {  // Are we done with this run?
             RemoveRun();                                                                // Updates to the next run
