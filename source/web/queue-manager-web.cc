@@ -70,11 +70,6 @@ void TogglePlay() {
 int anim_step = 1;
 
 int main() {
-    int x = 4;
-    std::function<std::string()> my_func = [x]() { return std::to_string(x * x); };
-    run_list.AddDepVariable(my_func, "Epoch");
-    run_list.AddDepVariable(my_func, "Num Coop");
-    run_list.AddDepVariable(my_func, "Num Defect");
     doc << "<h2>Spatial Prisoner's Dilema</h2>";
     auto canvas = doc.AddCanvas(world_size, world_size, "canvas");
     // canvas.On("click", CanvasClick);
@@ -93,6 +88,10 @@ int main() {
         if (!run_list.IsEmpty()) {
             run_list.SetEpoch(world.GetEpoch());
             run_list.SetNumCoop(world.CountCoop());
+            //std::function<std::string)> my_func = [&]() { return std::to_string(x * x); };
+            //run_list.AddDepVariable(my_func, "Epoch");
+            //run_list.AddDepVariable(my_func, "Num Coop");
+            //run_list.AddDepVariable(my_func, "Num Defect");
             run_list.DivTableCalc();  //calculations for table
         }
     });

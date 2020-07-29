@@ -10,8 +10,9 @@
 
 /// The goal of creating this tool is to alleviate the process of running multiple simulations of the same kind within
 /// a queue structure. A user is able to visually see the results of their simulations, and each run held within the queue
-/// runs subsequently after the other. Real time statistics are posted within a table as each run is carried out.
+/// runs subsequently after the other. Real-time statistics, that the user is able to display, are posted within a table as each run is carried out.
 /// Here is a link to a blogpost that describes this tool's inpsiration, purpose, and required instructions:
+/// (Link to blogpost)
 
 #pragma once
 
@@ -20,7 +21,6 @@
 #include <string>
 #include <unordered_map>
 #include <utility>
-#include <vector>
 
 #include "base/vector.h"
 #include "config/SettingConfig.h"
@@ -32,6 +32,7 @@
 
 namespace emp {
 
+/// Information of each element within queue. This info represents the information required for each run to be processed.
 struct RunInfo {
     SettingConfig runinfo_config;
 
@@ -45,6 +46,7 @@ struct RunInfo {
         : runinfo_config(_config), id(_id), cur_epoch(0), num_coop(0), num_defect(0) { ; }
 };
 
+/// Primary class that establishes queue for runs and processes them accordingly
 class QueueManager {
    private:
     SettingConfig queue_config;
@@ -52,7 +54,7 @@ class QueueManager {
     emp::web::Div display_div;
     std::string table_id;
     // ordered names of dependant headers with associated column #'s
-    std::vector<std::pair<std::string, int>> ordered_names;
+    emp::vector<std::pair<std::string, int>> ordered_names;
     std::unordered_map<std::string, std::function<std::string()>> dependant_headers;
     // for SimplePDWorld
     size_t epoch_ = 0;
@@ -115,7 +117,7 @@ class QueueManager {
 
         result_tab.GetCell(0, 0).SetHeader() << "Run";
         int column_count = 1;
-        std::vector<std::string> setting_names = queue_config.GetSettingMapNames();
+        emp::vector<std::string> setting_names = queue_config.GetSettingMapNames();
         for (const auto& p : setting_names) {
             result_tab.GetCell(0, column_count).SetHeader() << "<i>" << p << "</i>";
             ++column_count;
@@ -171,6 +173,7 @@ class QueueManager {
 
         current_run.cur_epoch = current_epoch;
         current_run.num_coop = coop_;
+        // Add user function config feature
         current_run.num_defect = current_run.runinfo_config.GetValue<size_t>("N_value") - current_run.num_coop;
 
         if (current_epoch >= current_run.runinfo_config.GetValue<size_t>("E_value")) {  // Are we done with this run?

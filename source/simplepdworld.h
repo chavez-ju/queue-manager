@@ -5,7 +5,6 @@
 #include <string>
 #include <unordered_map>
 #include <utility>
-#include <vector>
 
 #include "base/vector.h"
 #include "config/SettingConfig.h"
