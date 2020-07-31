@@ -175,7 +175,11 @@ class QueueManager {
         current_run.cur_epoch = current_epoch;
         current_run.num_coop = coop_;
         // user function configuration
-        current_run.num_defect = (dependant_headers.begin()->second)();
+        for (auto i : dependant_headers) {
+            if (i.first == "Num Defect") {
+                current_run.num_defect = (dependant_headers.begin()->second)();
+            }
+        }
 
         if (current_epoch >= current_run.runinfo_config.GetValue<size_t>("E_value")) {  // Are we done with this run?
             RemoveRun();                                                                // Updates to the next run
