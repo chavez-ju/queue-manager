@@ -10,7 +10,6 @@
 *.pyc
 *.swp
 *.swo
-*.wasm
 *.wast
 *-bak.cc
 *tmp.*
