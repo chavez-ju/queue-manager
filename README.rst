@@ -13,7 +13,7 @@ Queue Manager
 
 an experiment queue manager for Empirical
 
-Check out the live in-browser web app at `https://chavez-ju.github.io/queue-manager/web/queue-manager.html`_.
+Check out the live in-browser web app at `https://chavez-ju.github.io/queue-manager/web/queue-manager.html`.
 
 
 * Free software: MIT license
